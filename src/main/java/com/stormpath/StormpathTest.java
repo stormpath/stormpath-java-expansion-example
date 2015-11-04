@@ -28,7 +28,16 @@ public class StormpathTest {
             Applications.where(Applications.name().eqIgnoreCase(System.getProperty("application")))
         ).iterator().next();
 
-        AccountCriteria criteria = Accounts.criteria().limitTo(50);
+        int limit = 50;
+        if (System.getProperty("limit") != null) {
+            try {
+                limit = Integer.parseInt(System.getProperty("limit"));
+            } catch (NumberFormatException nfe) {
+                logger.error("System property: -Dlimit=" + System.getProperty("limit") + ", does not parse as an int.");
+            }
+        }
+
+        AccountCriteria criteria = Accounts.criteria().limitTo(limit);
         if (System.getProperty("expand") == null || !"false".equals(System.getProperty("expand").toLowerCase())) {
             criteria = criteria.withCustomData().withGroups();
         }
@@ -36,7 +45,7 @@ public class StormpathTest {
         AccountList accounts = application.getAccounts(criteria);
 
         int numAccounts = accounts.getSize();
-        logger.debug("Working with: " + numAccounts + " accounts.");
+        logger.debug("Working with: " + numAccounts + " accounts. Limit is: " + limit);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

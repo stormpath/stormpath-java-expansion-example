@@ -19,6 +19,7 @@ There are a number of system properties this program uses to control logging and
 ```
 STORMPATH_API_KEY_FILE=/path/to/apiKey.properties java \
   -Dapplication=<application name> \
+  [-Dlimit=<Account request limit - 50 by default>] \
   [-Dexpand=false] \
   [-Dlog.headers=<log level - WARN by default>] \
   [-Dlog.wire=<log level - WARN by default>] \
