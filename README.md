@@ -1,6 +1,9 @@
-# Expansion Optimization Example
+# Performance Example
 
-The purpose of this project is to demonstrate the performance gain when using Stormpath's [link expansion](http://docs.stormpath.com/java/product-guide/#link-expansion) criteria.
+The purpose of this project is to demonstrate the performance with Java with two different tests:
+
+* Performance gain when using Stormpath's [link expansion](http://docs.stormpath.com/java/product-guide/#link-expansion) criteria.
+* General performance of token auth operations with and without cache
 
 ## setup
 
@@ -29,7 +32,8 @@ STORMPATH_API_KEY_FILE=/path/to/apiKey.properties java \
     [--username <username>] \
     [--password <password>] \
     [--iterations <total # of runs>] \
-    [--executors <# of threads>]
+    [--executors <# of threads>] \
+    [--reports csv | json]
 ```
 
 The only required propertes are `application` and `test`.
@@ -97,9 +101,8 @@ The above example is counting all of the log lines containing `GET` in them. Thi
 Now, without expansion:
 
 ```
-STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties java \
-  -Dlog.headers=debug \
--jar target/stormpath-test-uber-0.1.1.jar  \
+STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties 
+java -Dlog.headers=debug -jar target/stormpath-test-uber-0.1.1.jar  \
   --application stormpath-seed2 \
   --test account \
   --iterations 1 \
@@ -111,6 +114,35 @@ STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties java \
 ```
 
 This time, it's making an additional 1000 requests! No wonder why it takes so much longer.
+
+You can also produce a nicely formatted `csv` or `json` report of token auth stats. Here's the command you would run:
+
+```
+STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties \
+java -Dlog.stormpath=warn -jar target/stormpath-test-uber-0.1.1.jar \
+  --application stormpath-seed2 \
+  --test token \
+  --username <username> \
+  --password <password> \
+  --iterations 100 \
+  --executors 10 \
+  --report csv
+```
+
+This will produce a report that looks like this (all values in milliseconds):
+
+|cache:oauth|cache:verify&#8209;local|cache:verify&#8209;api|nocache:oauth|nocache:verify&#8209;local|nocache:verify&#8209;api|
+|----------:|-----------------:|---------------:|------------:|-------------------:|-----------------:|
+1|0|1|124|0|110
+2|0|1|108|0|76
+2|0|1|76|0|79
+2|0|2|111|0|66
+1|0|1|113|0|76
+1|0|1|120|0|130
+1|0|1|85|0|77
+1|0|2|100|0|115
+1|0|1|100|0|107
+...|...|...|...|...|...
 
 ## conclusion
 
