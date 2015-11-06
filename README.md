@@ -14,23 +14,31 @@ Create an Application in the admin UI for your Stormpath account. Create some nu
 
 ## run
 
-There are a number of system properties this program uses to control logging and to toggle the use of expansion. Here's how to run the program:
+There are a number of command line arguments this program uses to control logging and to toggle the use of expansion. Here's how to run the program:
 
 ```
 STORMPATH_API_KEY_FILE=/path/to/apiKey.properties java \
-  -Dapplication=<application name> \
-  [-Dlimit=<Account request limit - 50 by default>] \
-  [-Dexpand=false] \
-  [-Dlog.headers=<log level - WARN by default>] \
-  [-Dlog.wire=<log level - WARN by default>] \
-  [-Dlog.stormpath=<log level - DEBUG by default>] \
-  -jar target/stormpath-test.jar
+    [-Dlog.headers=<log level - WARN by default>] \
+    [-Dlog.wire=<log level - WARN by default>] \
+    [-Dlog.stormpath=<log level - DEBUG by default>] \
+  -jar target/stormpath-test-uber-0.1.1.jar \
+    --application <application name> \
+    --test account | token \
+    [--no-expand] \
+    [--limit <Account request limit - 50 by default>] \
+    [--username <username>] \
+    [--password <password>] \
+    [--iterations <total # of runs>] \
+    [--executors <# of threads>]
 ```
 
-The only required property is an `application` name.
+The only required propertes are `application` and `test`.
+
+Available tests are `account` and `token`. The account test exercises retrieving all accounts with and without expansion. The token test exercises
+oauth2 authentication and verification locally and via api, with and without cache.
 
 By default, link expansion is turned on for `customData` and `groups`.
-Using the `-Dexpand=false` turns off link expansion.
+Using the `--no-expand` turns off link expansion.
 
 By default, low level logging of HTTP requests is turned off. To enable logging of all headers, use this switch: `-Dlog.headers=debug`. This is handy in seeing the number of wire requests that  are made when expansion is turned off and turned on.
 
@@ -39,9 +47,12 @@ By default, the program will show the number of accounts found for the applicati
 Here's a sample run with expansion:
 
 ```
-➥ STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.properties java \
-  -Dapplication=stormpath-seed \
-  -jar target/stormpath-test.jar
+STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties java -jar target/stormpath-test-uber-0.1.1.jar  \
+  --application stormpath-seed2 \
+  --test account \
+  --iterations 1 \
+  --executors 1 \
+  --limit 100
   
 18:58:28.777 [main] DEBUG com.stormpath.StormpathTest - Working with: 500 accounts.
 18:58:36.768 [main] DEBUG com.stormpath.StormpathTest - Full Iteration of accounts, customData and groups: 00:00:07.984
@@ -52,10 +63,13 @@ You can see that it iterated over 500 accounts and the associated customData and
 Here's the same run without using expansion:
 
 ```
-➥ STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.properties java \
-  -Dapplication=stormpath-seed \
-  -Dexpand=false \
-  -jar target/stormpath-test.jar
+STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties java -jar target/stormpath-test-uber-0.1.1.jar  \
+  --application stormpath-seed2 \
+  --test account \
+  --iterations 1 \
+  --executors 1 \
+  --limit 100 \
+  --no-expand
   
 19:01:12.453 [main] DEBUG com.stormpath.StormpathTest - Working with: 500 accounts.
 19:02:20.665 [main] DEBUG com.stormpath.StormpathTest - Full Iteration of accounts, customData and groups: 00:01:08.205
@@ -66,10 +80,14 @@ Without expansion it took an additional minute to retrieve the same data!
 Let's take a look at the number of reqeuests being made over the wire in both cases. First, with expansion:
 
 ```
-➥ STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.properties java \
-  -Dapplication=stormpath-seed \
+STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties java \
   -Dlog.headers=debug \
-  -jar target/stormpath-test.jar  | grep GET | wc -l
+-jar target/stormpath-test-uber-0.1.1.jar  \
+  --application stormpath-seed2 \
+  --test account \
+  --iterations 1 \
+  --executors 1 \
+  --limit 100 | grep GET | wc -l
   
 13
 ```
@@ -79,11 +97,15 @@ The above example is counting all of the log lines containing `GET` in them. Thi
 Now, without expansion:
 
 ```
-➥ STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.properties java \
-  -Dapplication=stormpath-seed \
+STORMPATH_API_KEY_FILE=~/.stormpath/apiKey.remote_test.properties java \
   -Dlog.headers=debug \
-  -Dexpand=false \
-  -jar target/stormpath-test.jar  | grep GET | wc -l
+-jar target/stormpath-test-uber-0.1.1.jar  \
+  --application stormpath-seed2 \
+  --test account \
+  --iterations 1 \
+  --executors 1 \
+  --no-expand \
+  --limit 100 | grep GET | wc -l
   
 1013
 ```
@@ -93,3 +115,5 @@ This time, it's making an additional 1000 requests! No wonder why it takes so mu
 ## conclusion
 
 Stormpath's [link expansion](http://docs.stormpath.com/java/product-guide/#link-expansion) feature is your friend! Use it when you know in advance the data objects you will be working with.
+
+Have a look at the token auth code - with and without cache. Cacheing is your friedn, too!
