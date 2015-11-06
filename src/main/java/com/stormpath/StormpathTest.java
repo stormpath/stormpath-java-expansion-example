@@ -12,6 +12,8 @@ import org.apache.commons.cli.ParseException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -27,20 +29,6 @@ public class StormpathTest {
         ERROR;
     }
 
-    private static void usage(Options commandLineOptions, ExitCode exitCode) {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("stormpath-test", commandLineOptions);
-        System.exit(exitCode.ordinal());
-    }
-
-    private static void requireOptions(String[] optionNames, CommandLine commandLine, Options commandLineOptions) {
-        for (String optionName : optionNames) {
-            if (!commandLine.hasOption(optionName)) {
-                usage(commandLineOptions, ExitCode.ERROR);
-            }
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         Options commandLineOptions = new Options();
         commandLineOptions.addOption("t", "test", true, "Which test to run: account | token (required)");
@@ -53,6 +41,7 @@ public class StormpathTest {
         commandLineOptions.addOption("p", "password", true, "Password to use for token auth. (optional)");
         commandLineOptions.addOption("i", "iterations", true, "Number of times to run the test. (optional - default=20)");
         commandLineOptions.addOption("e", "executors", true, "Number of threads. (optional - default=5)");
+        commandLineOptions.addOption("r", "report", true, "Output a report: csv | json. (optional - default=false");
         commandLineOptions.addOption("h", "help", false, "Show help");
 
         CommandLineParser parser = new DefaultParser();
@@ -90,7 +79,7 @@ public class StormpathTest {
         }
 
         ExecutorService pool = Executors.newFixedThreadPool(executors);
-        Set<Future<Map<String, Long>>> set = Sets.newHashSet();
+        Set<Future<Map<String, Long>>> resultSet = Sets.newHashSet();
 
         for (int i=0; i<iterations; i++) {
             Callable<Map<String, Long>> c = null;
@@ -102,13 +91,62 @@ public class StormpathTest {
                 c = new TokenTest(commandLine);
             }
             Future<Map<String, Long>> future = pool.submit(c);
-            set.add(future);
+            resultSet.add(future);
         }
 
-        for (Future<Map<String, Long>> future : set) {
-            JSONObject j = new JSONObject(future.get());
-            System.err.println(j.toString());
+        if (commandLine.hasOption("report")) {
+            report(commandLine, resultSet);
         }
-        System.exit(0);
+        pool.shutdown();
+    }
+
+    private static void usage(Options commandLineOptions, ExitCode exitCode) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("stormpath-test", commandLineOptions);
+        System.exit(exitCode.ordinal());
+    }
+
+    private static void requireOptions(String[] optionNames, CommandLine commandLine, Options commandLineOptions) {
+        for (String optionName : optionNames) {
+            if (!commandLine.hasOption(optionName)) {
+                usage(commandLineOptions, ExitCode.ERROR);
+            }
+        }
+    }
+
+    private static void report(CommandLine commandLine, Set<Future<Map<String, Long>>> resultSet) throws Exception {
+        String format = (commandLine.getOptionValue("report") != null) ? commandLine.getOptionValue("report") : "csv";
+        boolean firstIteration = true;
+        int numIterations = resultSet.size()-1;
+        int iteration = 0;
+        for (Future<Map<String, Long>> future : resultSet) {
+            Map<String, Long> row = future.get();
+            if (firstIteration) {
+                firstIteration = false;
+                if ("csv".equals(format)) {
+                    String header = "";
+                    Set<String> keys = row.keySet();
+                    for (String key: keys) {
+                        header += key + ",";
+                    }
+                    System.out.println(header.substring(0, header.length() - 1));
+                } else {
+                    System.out.println("[");
+                }
+            }
+            if ("csv".equals(format)) {
+                String rowString = "";
+                Collection<Long> values = row.values();
+                for (Long value: values) {
+                    rowString += value + ",";
+                }
+                System.out.println(rowString.substring(0, rowString.length()-1));
+            } else {
+                JSONObject j = new JSONObject(row);
+                String end = (iteration == numIterations) ? "\n]" : ",";
+                System.out.println(j.toString() + end);
+            }
+            iteration++;
+        }
     }
 }
