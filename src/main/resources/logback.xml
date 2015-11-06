@@ -10,6 +10,7 @@
     <logger name="org.apache.http.headers" level="${log.headers:-warn}"/>
 
     <logger name="com.stormpath.StormpathTest" level="${log.stormpath:-debug}"/>
+    <logger name="com.stormpath.tests" level="${log.stormpath:-debug}"/>
 
     <root level="warn">
         <appender-ref ref="STDOUT" />
