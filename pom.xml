@@ -9,7 +9,7 @@
     <version>0.1.1</version>
 
     <properties>
-        <stormpath-sdk-version>1.0.RC5.1</stormpath-sdk-version>
+        <stormpath.version>1.0.RC7.4</stormpath.version>
         <jdk.target>1.7</jdk.target>
         <jdk.source>1.7</jdk.source>
     </properties>
@@ -18,20 +18,20 @@
         <dependency>
             <groupId>com.stormpath.sdk</groupId>
             <artifactId>stormpath-sdk-httpclient</artifactId>
-            <version>${stormpath-sdk-version}</version>
+            <version>${stormpath.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>com.stormpath.sdk</groupId>
             <artifactId>stormpath-sdk-api</artifactId>
-            <version>${stormpath-sdk-version}</version>
+            <version>${stormpath.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.stormpath.sdk</groupId>
             <artifactId>stormpath-sdk-oauth</artifactId>
-            <version>${stormpath-sdk-version}</version>
+            <version>${stormpath.version}</version>
         </dependency>
 
         <dependency>
